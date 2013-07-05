@@ -36,12 +36,14 @@ class SQLObject < MassObject
 
   def create
     arr = (['?'] * self.class.attributes.length).join(', ')
+    attr_names = self.class.attributes.join(", ")
     query = <<-SQL
-      INSERT INTO "#{@table_name}" ("#{self.class.attributes.join(", ")}")
-      VALUES "#{arr}"
+      INSERT INTO #{self.class.table_name} (#{attr_names})
+      VALUES (#{arr})
     SQL
 
     DBConnection.execute(query, *attribute_values)
+    self.send("#{:id}=", DBConnection.last_insert_row_id)
   end
 
   def update
@@ -49,46 +51,25 @@ class SQLObject < MassObject
     self.class.attributes.each do |attr_name|
       set_line << "#{attr_name} = ?"
     end
-    set_line.join(', ')
+    set_line = set_line.join(', ')
 
     query = <<-SQL
-      UPDATE "#{@table_name}"
-      SET "#{set_line}"
+      UPDATE #{self.class.table_name}
+      SET #{set_line}
+      WHERE id = ?
     SQL
 
-    DBConnection.execute(query, *attribute_values)
+    DBConnection.execute(query, *attribute_values, self.id)
   end
 
   def save
+    p self.id
+    create if send(:id).nil?
+    update if not send(:id).nil?
   end
 
-  def attribute_values
-    values = []
-    self.class.attributes.each do |attribute|
-      values << send(attribute)
+  private
+    def attribute_values
+      values = self.class.attributes.map{|attribute| send(attribute)}
     end
-  end
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
