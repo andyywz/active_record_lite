@@ -50,8 +50,55 @@ module Associatable
   end
 
   def has_many(name, params = {})
+    define_method(name) do
+      other_class_name = params[:class_name] ||= name.to_s.singularize.camelize
+      primary_key = params[:primary_key] ||= self.id
+      foreign_key = params[:foreign_key] ||= "#{self.class.underscore}_id"
+
+      other_class = other_class_name.constantize
+      other_table_name = other_class.table_name
+
+      query = <<-SQL
+      SELECT *
+      FROM #{other_table_name}
+      WHERE #{foreign_key} = ?
+      SQL
+
+      other_class.parse_all(DBConnection.execute(query, self.id))
+    end
   end
 
   def has_one_through(name, assoc1, assoc2)
   end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
