@@ -23,11 +23,8 @@ class MassObject
   end
 
   def self.parse_all(results)
+    results.map do |row|
+      self.new(row)
+    end
   end
 end
-
-class MyClass < MassObject
-  set_attrs :x, :y
-end
-
-MyClass.new(:x => :x_val, :y => :y_val)

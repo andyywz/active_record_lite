@@ -20,10 +20,7 @@ class SQLObject < MassObject
       FROM "#{@table_name}"
     SQL
 
-    rows = DBConnection.execute(query)
-    rows.each do |row_hash|
-      self.new(row_hash)
-    end
+    self.parse_all(DBConnection.execute(query))
   end
 
   def self.find(id)
@@ -36,34 +33,6 @@ class SQLObject < MassObject
     DBConnection.execute(query, id)
   end
 
-  def create
-    arr = (['?'] * self.class.attributes.length).join(', ')
-    attr_names = self.class.attributes.join(", ")
-    query = <<-SQL
-      INSERT INTO #{self.class.table_name} (#{attr_names})
-      VALUES (#{arr})
-    SQL
-
-    DBConnection.execute(query, *attribute_values)
-    self.send("#{:id}=", DBConnection.last_insert_row_id)
-  end
-
-  def update
-    set_line = []
-    self.class.attributes.each do |attr_name|
-      set_line << "#{attr_name} = ?"
-    end
-    set_line = set_line.join(', ')
-
-    query = <<-SQL
-      UPDATE #{self.class.table_name}
-      SET #{set_line}
-      WHERE id = ?
-    SQL
-
-    DBConnection.execute(query, *attribute_values, self.id)
-  end
-
   def save
     p self.id
     create if send(:id).nil?
@@ -73,5 +42,33 @@ class SQLObject < MassObject
   private
     def attribute_values
       values = self.class.attributes.map{|attribute| send(attribute)}
+    end
+
+    def create
+      arr = (['?'] * self.class.attributes.length).join(", ")
+      attr_names = self.class.attributes.join(", ")
+      query = <<-SQL
+        INSERT INTO #{self.class.table_name} (#{attr_names})
+        VALUES (#{arr})
+      SQL
+
+      DBConnection.execute(query, *attribute_values)
+      self.send("#{:id}=", DBConnection.last_insert_row_id)
+    end
+
+    def update
+      set_line = []
+      self.class.attributes.each do |attr_name|
+        set_line << "#{attr_name} = ?"
+      end
+      set_line = set_line.join(', ')
+
+      query = <<-SQL
+        UPDATE #{self.class.table_name}
+        SET #{set_line}
+        WHERE id = ?
+      SQL
+
+      DBConnection.execute(query, *attribute_values, self.id)
     end
 end
