@@ -44,7 +44,7 @@ module Associatable
     assoc_params[name] = BelongsToAssocParams.new(name, params)
 
     define_method(name) do
-      results = DBConnection.execute(<<-SQL,self.send(self.class.assoc_params[name].foreign_key))
+      results = DBConnection.execute(<<-SQL, self.send(self.class.assoc_params[name].foreign_key))
         SELECT *
         FROM #{self.class.assoc_params[name].other_table}
         WHERE id = ?
@@ -66,8 +66,23 @@ module Associatable
     end
   end
 
-  def has_one_through(name, assoc1, assoc2)
+  def has_one_through(name, assoc1, assoc2) # :house, :human, :house
+    define_method(name) do
+      cat_to_human = self.class.assoc_params[assoc1]
+      human_to_house = cat_to_human.other_class.assoc_params[assoc2]
 
+      results = DBConnection.execute(<<-SQL, self.id)
+      SELECT house.*
+      FROM #{human_to_house.other_class.table_name} AS house
+      JOIN #{cat_to_human.other_class.table_name} AS human
+      ON house.#{human_to_house.primary_key} = human.#{human_to_house.foreign_key}
+      JOIN #{self.class.table_name} AS cat
+      ON cat.#{cat_to_human.foreign_key} = human.#{cat_to_human.primary_key}
+      WHERE cat.id = ?
+      SQL
+
+      human_to_house.other_class.parse_all(results)
+    end
   end
 end
 
