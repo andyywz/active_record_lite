@@ -31,6 +31,22 @@ module Associatable
   end
 
   def belongs_to(name, params = {})
+    define_method(name) do
+      other_class_name = params[:class_name] ||= name.camelize
+      primary_key = params[:primary_key] ||= self.id
+      foreign_key = params[:foreign_key] ||= "#{name}_id"
+
+      other_class = other_class_name.constantize
+      other_table_name = other_class.table_name
+
+      query = <<-SQL
+        SELECT *
+        FROM #{other_table_name}
+        WHERE id = ?
+      SQL
+
+      other_class.parse_all(DBConnection.execute(query, self.send(foreign_key)))
+    end
   end
 
   def has_many(name, params = {})
