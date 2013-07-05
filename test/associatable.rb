@@ -32,6 +32,6 @@ p cat.human
 
 human = Human.find(1)
 p human.cats
-# p human.house
-#
-# p cat.house
+p human.house
+
+p cat.house
