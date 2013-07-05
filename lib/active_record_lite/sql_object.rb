@@ -42,7 +42,7 @@ class SQLObject < MassObject
 
   private
     def attribute_values
-      values = self.class.attributes.map{|attribute| send(attribute)}
+      values = self.class.attributes.map{ |attribute| send(attribute) }
     end
 
     def create
