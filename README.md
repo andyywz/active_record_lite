@@ -1,1 +1,1 @@
-THIS README INTENTIONALLY LEFT BLANK
+This is an Active Record clone (lite).
